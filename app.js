@@ -11,6 +11,7 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+
 // Enable CORS for all origins (you can replace '*' with a specific domain for more security)
 app.use(cors({
   origin: '*' // Replace with your domain if you want to restrict
