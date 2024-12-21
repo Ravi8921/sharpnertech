@@ -1,0 +1,41 @@
+<%- include('../includes/head.ejs') %>
+<link rel="stylesheet" href="/css/appointment.css">
+</head>
+
+<body>
+    <%- include('../includes/navigation.ejs') %>
+
+    <main>
+        <% if (appointments.length > 0) { %>
+            <div class="grid">
+                <% for (let appointment of appointments) { %> <!-- Use appointment instead of product -->
+                    <article class="card appointment-item">
+                        <header class="card__header">
+                            <h1 class="appointment__title">Appointment ID: <%= appointment.id %></h1>
+                        </header>
+                        <div class="card__content">
+                            <p><strong>Name:</strong> <%= appointment.fullName %></p>
+                            <p><strong>Email:</strong> <%= appointment.email %></p>
+                            <p><strong>Phone:</strong> <%= appointment.phone %></p>
+                            <p><strong>Date:</strong> <%= appointment.appointmentDate.toLocaleString() %></p>
+                        </div>
+                        <div class="card__actions">
+                            <!-- Corrected the link to use appointment.id -->
+                            <a href="/edit-appointment/<%= appointment.id %>" class="btn">Edit</a>
+
+                            <!-- Corrected the form to use appointment.id for deletion -->
+                            <form action="/delete-appointment/<%= appointment.id %>" method="POST">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button class="btn" type="submit">Delete</button>
+                              </form>
+                              
+                        </div>
+                    </article>
+                <% } %>
+            </div>
+        <% } else { %>
+            <h1>No Appointments Found!</h1>
+        <% } %>
+    </main>
+
+<%- include('../includes/end.ejs') %>

@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const errorController = require('./controllers/error');
 const adminRoutes = require('./routes/admin');
+const appointmentRoutes = require('./routes/appointment');
 const shopRoutes = require('./routes/shop');
 const sequelize = require('./util/database');
 
@@ -27,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Use routes for admin and shop
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
-
+app.use(appointmentRoutes);
 // Handle 404 errors
 app.use(errorController.get404);
 

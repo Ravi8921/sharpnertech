@@ -1,0 +1,31 @@
+<%- include('../includes/head.ejs') %>
+<link rel="stylesheet" href="/css/forms.css">
+<link rel="stylesheet" href="/css/appointment.css">
+</head>
+
+<body>
+   <%- include('../includes/navigation.ejs') %>
+
+    <main>
+        <form class="appointment-form" action="/edit-appointment/<%= appointment.id %>" method="POST">
+            <div class="form-control">
+                <label for="fullName">Full Name</label>
+                <input type="text" name="fullName" id="fullName" value="<%= appointment.fullName %>" required>
+            </div>
+            <div class="form-control">
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" value="<%= appointment.email %>">
+            </div>
+            <div class="form-control">
+                <label for="phone">Phone</label>
+                <input type="text" name="phone" id="phone" value="<%= appointment.phone %>">
+            </div>
+            <div class="form-control">
+                <label for="appointmentDate">Appointment Date</label>
+                <input type="date" name="appointmentDate" id="appointmentDate" value="<%= appointment.appointmentDate %>">
+            </div>
+            <button type="submit">Update Appointment</button>
+        </form>
+    </main>
+
+<%- include('../includes/end.ejs') %>
