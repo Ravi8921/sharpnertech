@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Expense Tracker</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="container bg-info">
+      <h1 class="text-center">Expense Tracker</h1>
+      <form id="expenseForm" class="mb-3">
+        <div class="form-group">
+          <label for="expenseName">Expense Description</label>
+          <input type="text" class="form-control" id="expenseName" required />
+        </div>
+        <div class="form-group">
+          <label for="expenseAmount">Expense Amount</label>
+          <input
+            type="number"
+            class="form-control"
+            id="expenseAmount"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="expenseCategory">Expense Category</label>
+          <select class="form-control" id="expenseCategory" required>
+            <option value="movie">Movie</option>
+            <option value="fuel">Fuel</option>
+            <option value="rent">Rent</option>
+            <option value="rent">Coaching Fee</option>
+            <option value="rent">Daily expenses</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Expense</button>
+      </form>
+      <table id="expenseTable" class="table">
+        <thead>
+          <tr>
+            <th>Expense Description</th>
+            <th>Expense Amount</th>
+            <th>Expense Category</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="expenseList">
+          <!-- Expense items will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ... (existing code remains unchanged) ... -->
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+      // Check if there are any expenses in local storage, and initialize the expense list
+      let expenses = localStorage.getItem("expenses");
+      expenses = expenses ? JSON.parse(expenses) : [];
+
+      // Function to render the expense list
+      function renderExpenseList() {
+        const expenseList = document.getElementById("expenseList");
+        expenseList.innerHTML = "";
+
+        expenses.forEach((expense, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+                    <td>${expense.name}</td>
+                    <td>Rs${expense.amount}</td>
+                    <td>${expense.category}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm editExpense" data-index="${index}">Edit</button>
+                        <button class="btn btn-danger btn-sm deleteExpense" data-index="${index}">Delete</button>
+                    </td>
+                `;
+          expenseList.appendChild(row);
+        });
+      }
+
+      // Function to add a new expense
+
+      // Function to fetch expenses from the API
+      function fetchExpenses() {
+        axios
+          .get("http://localhost:3000/expenses")
+          .then((response) => {
+            expenses = response.data; // Assuming the response data is an array of expenses
+            renderExpenseList();
+          })
+          .catch((error) => {
+            console.error("Error fetching expenses:", error);
+          });
+      }
+
+      // Function to add a new expense using the API
+      function addExpense(name, amount, category) {
+        const expense = {
+          name: name,
+          amount: amount,
+          category: category,
+        };
+        axios
+          .post("http://localhost:3000/expenses", expense)
+          .then((response) => {
+            fetchExpenses(); // Fetch updated list after adding
+          })
+          .catch((error) => {
+            console.error("Error adding expense:", error);
+          });
+      }
+
+      // Function to delete an expense using the API
+      function deleteExpense(index) {
+        const expenseIdToDelete = expenses[index].id; // Assuming each expense has an 'id' property
+        axios
+          .delete(`http://localhost:3000/expenses/${expenseIdToDelete}`)
+          .then((response) => {
+            fetchExpenses(); // Fetch updated list after deletion
+          })
+          .catch((error) => {
+            console.error("Error deleting expense:", error);
+          });
+      }
+
+      // Function to edit an expense using the API
+      function editExpense(index, name, amount, category) {
+        const expenseIdToUpdate = expenses[index].id; // Assuming each expense has an 'id' property
+        const updatedExpense = {
+          name: name,
+          amount: amount,
+          category: category,
+        };
+        axios
+          .put(`http://localhost:3000/expenses/${expenseIdToUpdate}`, updatedExpense)
+          .then((response) => {
+            fetchExpenses(); // Fetch updated list after edit
+          })
+          .catch((error) => {
+            console.error("Error editing expense:", error);
+          });
+      }
+
+      // ... (existing code remains unchanged)
+
+      const expenseForm = document.getElementById("expenseForm");
+      expenseForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const expenseName = document.getElementById("expenseName").value;
+        const expenseAmount = document.getElementById("expenseAmount").value;
+        const expenseCategory =
+          document.getElementById("expenseCategory").value;
+
+        const editIndex = expenseForm.getAttribute("data-edit-index");
+        if (editIndex !== null) {
+          editExpense(editIndex, expenseName, expenseAmount, expenseCategory);
+          expenseForm.removeAttribute("data-edit-index");
+          document.getElementById("expenseForm").reset();
+          return;
+        }
+
+        addExpense(expenseName, expenseAmount, expenseCategory);
+      });
+
+      // Event listener for the delete expense buttons
+      const expenseTable = document.getElementById("expenseTable");
+      expenseTable.addEventListener("click", function (e) {
+        if (e.target.classList.contains("deleteExpense")) {
+          const index = e.target.getAttribute("data-index");
+          deleteExpense(index);
+        }
+
+        if (e.target.classList.contains("editExpense")) {
+          const index = e.target.getAttribute("data-index");
+          const expense = expenses[index];
+          expenseForm.setAttribute("data-edit-index", index);
+          document.getElementById("expenseName").value = expense.name;
+          document.getElementById("expenseAmount").value = expense.amount;
+          document.getElementById("expenseCategory").value = expense.category;
+        }
+      });
+
+      // Initial rendering of the expense list
+      renderExpenseList();
+    </script>
+  </body>
+</html>
