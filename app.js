@@ -7,7 +7,10 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const sequelize = require('./util/database');
 const Product = require('./models/product');
+const Cart = require('./models/cart');
+const CartItem = require('./models/cart-item');
 const User = require('./models/user');
+
 const app = express();
 
 // Set view engine to EJS and configure views folder
@@ -32,7 +35,10 @@ app.use((req, res, next) => {
       req.user = user;
       next();
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.log(err);
+      next(); // Ensure the request continues even if there's an error with finding the user
+    });
 });
 
 // Use routes for admin and shop
@@ -46,22 +52,22 @@ app.use(errorController.get404);
 Product.belongsTo(User, { constraints: true, onDelete: 'CASCADE' });
 User.hasMany(Product);
 
+User.hasOne(Cart);
+Cart.belongsTo(User);
+Cart.belongsToMany(Product, { through: CartItem });
+Product.belongsToMany(Cart, { through: CartItem });
+
 // Start the server after syncing with the database
-
 sequelize.sync({ force: true })
-
-  // .sync({ force: true }) // Uncomment for a fresh database
-  // .sync()
-  .then(result => {
-    return User.findByPk(1); // Correct method to find a user by primary key
-  })
+  .then(() => User.findByPk(1)) // Correct method to find a user by primary key
   .then(user => {
     if (!user) {
       return User.create({ name: 'ravi', email: 'ravi@admin.com' });
     }
     return user;
   })
-  .then(user => {
+  .then(user => user.createCart())
+  .then(() => {
     console.log('Database synced successfully');
     app.listen(3002, () => {
       console.log('Server is running on http://localhost:3002');
