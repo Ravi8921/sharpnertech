@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Attendance Tracker</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="container bg-info">
+      <h1 class="text-center">Student Attendance Tracker</h1>
+      <button id="fetchReport" class="btn btn-info mt-3" style="display: none;">
+        Fetch Attendance Report
+      </button>
+      <!-- Search by Date -->
+      <form id="attendanceForm" class="mb-3">
+        <div class="form-group">
+          <label for="attendanceDate">Select Date</label>
+          <input type="date" class="form-control" id="attendanceDate" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+
+      <div id="attendanceContainer" style="display: none;">
+        <!-- Attendance List Table -->
+        <h3>Attendance for Date: <span id="selectedDate"></span></h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Attendance Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceList">
+            <!-- Student attendance rows will be dynamically added here -->
+          </tbody>
+        </table>
+
+        <p>Total Students: <span id="totalStudents"></span></p>
+
+        <!-- Submit Button for Attendance -->
+        <button id="submitAttendance" class="btn btn-success">Submit Attendance</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      const students = [
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Smith" },
+        { id: 3, name: "Alice Johnson" },
+      ];
+
+      let attendanceRecords = [];
+
+      function renderAttendanceList() {
+        const attendanceList = document.getElementById("attendanceList");
+        const totalStudents = document.getElementById("totalStudents");
+        const selectedDate = document.getElementById("selectedDate");
+
+        attendanceList.innerHTML = "";
+        totalStudents.innerHTML = students.length;
+        selectedDate.innerHTML = document.getElementById("attendanceDate").value;
+
+        students.forEach((student) => {
+          const attendance = attendanceRecords.find(
+            (record) => record.studentId === student.id
+          );
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${student.name}</td>
+            <td>
+              <label>
+                <input type="radio" name="attendance_${student.id}" value="present" ${
+            attendance && attendance.status === "present" ? "checked" : ""
+          } /> Present
+              </label>
+              <label>
+                <input type="radio" name="attendance_${student.id}" value="absent" ${
+            attendance && attendance.status === "absent" ? "checked" : ""
+          } /> Absent
+              </label>
+            </td>
+          `;
+          attendanceList.appendChild(row);
+        });
+      }
+
+      document.getElementById("attendanceForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const date = document.getElementById("attendanceDate").value;
+        if (!date) {
+          alert("Please select a date.");
+          return;
+        }
+
+        document.getElementById("attendanceContainer").style.display = "block";
+        renderAttendanceList();
+
+        // Check if attendance data exists for the selected date
+        const existingRecords = localStorage.getItem(date);
+        if (existingRecords) {
+          attendanceRecords = JSON.parse(existingRecords);
+          renderAttendanceList(); // Re-render the attendance list with existing data
+        }
+      });
+
+      function updateAttendance() {
+        const date = document.getElementById("attendanceDate").value;
+        const attendanceData = students.map((student) => {
+          const attendanceStatus = document.querySelector(
+            `input[name="attendance_${student.id}"]:checked`
+          )?.value;
+
+          return attendanceStatus
+            ? { studentId: student.id, date: date, status: attendanceStatus }
+            : null;
+        }).filter(Boolean);
+
+        if (attendanceData.length === 0) {
+          alert("No attendance data selected.");
+          return;
+        }
+
+        console.log(attendanceData);  // Log the attendance data to verify
+
+        // Update local storage with the attendance data for the selected date
+        localStorage.setItem(date, JSON.stringify(attendanceData));
+
+        // Send the data wrapped inside an object
+        axios
+          .post("http://localhost:3000/api/attendance", { attendanceData })
+          .then((response) => {
+            alert("Attendance submitted successfully!");
+          })
+          .catch((error) => {
+            console.error("Error submitting attendance", error);
+            alert("Failed to submit attendance.");
+          });
+      }
+
+      // Submit button for sending data to the backend
+      document.getElementById("submitAttendance").addEventListener("click", updateAttendance);
+    </script>
+  </body>
+</html>
