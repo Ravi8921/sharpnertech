@@ -17,6 +17,7 @@ User.init(
         isEmail: true, // Validates the format of the email
       },
     },
+    
     password: {
       type: DataTypes.STRING,
       allowNull: false,
