@@ -76,6 +76,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-form">
         <h2>Login</h2>
@@ -91,7 +92,7 @@
             <div class="form-group">
                 <button type="submit">Login</button>
             </div>
-            <a href="signup.html" class="signup-link">New user? Sign up here</a>
+            <a href="/signup" class="signup-link">New user? Sign up here</a>
         </form>
         <div id="message" class="message"></div>
     </div>
@@ -117,7 +118,7 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    message.textContent = 'Login successful!';
+                    message.textContent = data.message; // Display success message
                     message.className = 'message success';
 
                     // Redirect to another page or handle successful login here
