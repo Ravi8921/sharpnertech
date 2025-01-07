@@ -6,5 +6,6 @@ const router = express.Router();
 
 // Route to create attendance record
 router.post('/signup', registerController.createUser);
+router.post('/login', registerController.loginUser);
 
 module.exports = router;
