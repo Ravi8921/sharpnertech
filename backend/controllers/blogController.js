@@ -67,10 +67,18 @@ const getBlogComments = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+<<<<<<< HEAD
 const addComment = async (req, res) => {
   try {
     const { content } = req.body;
     const { blogId } = req.params; // Get blogId from URL parameters
+=======
+
+
+const addComment = async (req, res) => {
+  try {
+    const { blogId, content } = req.body;
+>>>>>>> 43b1e31eaeb0799e6772b3d76aae8259f5ffdb11
 
     if (!blogId || !content) {
       return res.status(400).json({ message: 'Blog ID and content are required.' });
@@ -95,6 +103,7 @@ const addComment = async (req, res) => {
 };
 
 
+<<<<<<< HEAD
 // const addComment = async (req, res) => {
 //   try {
 //     const { blogId, content } = req.body;
@@ -122,6 +131,8 @@ const addComment = async (req, res) => {
 // };
 
 
+=======
+>>>>>>> 43b1e31eaeb0799e6772b3d76aae8259f5ffdb11
 // Delete a comment by commentId
 // const deleteComment = async (req, res) => {
 //   const { commentId } = req.params; // Get the commentId from the route parameters
