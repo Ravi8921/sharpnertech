@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node.js Security Blog</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    h1,
+    h2 {
+      color: #333;
+    }
+
+    input,
+    textarea,
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .blog-post {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e8f0ff;
+      border: 1px solid #007bff;
+      border-radius: 5px;
+    }
+
+    .comments {
+      margin-top: 20px;
+    }
+
+    .comments div {
+      margin-bottom: 10px;
+    }
+
+    .delete-button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .toggle-comments {
+      cursor: pointer;
+      color: #f9f9f9;
+      margin-top: 10px;
+    }
+
+    .comment-section {
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Create Blog</h1>
+    <form id="blogForm">
+      <label for="title">Blog Title</label>
+      <input type="text" id="title" name="title" placeholder="Enter blog title" required>
+
+      <label for="author">Blog Author</label>
+      <input type="text" id="author" name="author" placeholder="Enter blog author" required>
+
+      <label for="content">Blog Content</label>
+      <textarea id="content" name="content" rows="5" placeholder="Enter blog content" required></textarea>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <div id="successMessage" style="display: none; color: green; margin-top: 20px;">
+      Blog post created successfully!
+    </div>
+
+    <div id="blogsContainer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const form = document.getElementById('blogForm');
+    const successMessage = document.getElementById('successMessage');
+    const blogsContainer = document.getElementById('blogsContainer');
+
+    // Handle form submission to create a new blog
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const title = document.getElementById('title').value;
+      const author = document.getElementById('author').value;
+      const content = document.getElementById('content').value;
+
+      try {
+        const response = await axios.post('http://localhost:3000/api/createBlog', {
+          title,
+          author,
+          content
+        });
+
+        if (response.status === 201) {
+          successMessage.style.display = 'block';
+          form.reset();
+          fetchBlogs();
+        }
+      } catch (error) {
+        console.error('Error creating blog:', error);
+      }
+    });
+
+    // Fetch all blogs with comments
+    const fetchBlogs = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/getBlogs');
+
+        if (response.status === 200) {
+          const blogs = response.data.blogs;
+          blogsContainer.innerHTML = '';
+
+          blogs.forEach(blog => {
+            const blogDiv = document.createElement('div');
+            blogDiv.className = 'blog-post';
+
+            blogDiv.innerHTML = `
+              <h3>${blog.title}</h3>
+              <p><strong>Author:</strong> ${blog.author}</p>
+              <p>${blog.content}</p>
+              <div class="comments">
+                <h4>Comments</h4>
+                <button class="toggle-comments" onclick="toggleComments(${blog.id})">+ Show Comments</button>
+                <div id="comments-${blog.id}" class="comment-section">
+                  ${blog.comments.map(comment => `
+                    <div>
+                      ${comment.content}
+                      <button class="delete-button" onclick="deleteComment(${blog.id}, ${comment.id})">Delete</button>
+                    </div>
+                  `).join('')}
+                </div>
+                <textarea id="commentInput-${blog.id}" placeholder="Add a comment"></textarea>
+                <button onclick="addComment(${blog.id})">Post Comment</button>
+              </div>
+            `;
+
+            blogsContainer.appendChild(blogDiv);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching blogs:', error);
+      }
+    };
+
+    // Add a comment to a blog
+    const addComment = async (blogId) => {
+      const commentInput = document.getElementById(`commentInput-${blogId}`);
+      const commentText = commentInput.value;
+
+      if (!commentText) {
+        alert('Please enter a comment.');
+        return;
+      }
+
+      try {
+        const response = await axios.post(`http://localhost:3000/api/blog/${blogId}/addComment`, {
+          content: commentText,
+        });
+
+        if (response.status === 201) {
+          commentInput.value = ''; // Clear the input after successful addition
+          fetchBlogs();
+        }
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    };
+
+    // Delete a comment
+    const deleteComment = async (blogId, commentId) => {
+      try {
+        const response = await axios.delete(`http://localhost:3000/api/blog/${blogId}/comment/${commentId}`);
+
+        if (response.status === 200) {
+          alert('Comment deleted successfully');
+          fetchBlogs();
+        }
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    };
+
+    // Toggle comments visibility
+    const toggleComments = (blogId) => {
+      const commentsSection = document.getElementById(`comments-${blogId}`);
+      const toggleButton = commentsSection.previousElementSibling;
+
+      if (commentsSection.style.display === 'none' || commentsSection.style.display === '') {
+        commentsSection.style.display = 'block';
+        toggleButton.textContent = '- Hide Comments';
+      } else {
+        commentsSection.style.display = 'none';
+        toggleButton.textContent = '+ Show Comments';
+      }
+    };
+
+    // Fetch blogs on page load
+    window.onload = fetchBlogs;
+  </script>
+</body>
+
+</html>
