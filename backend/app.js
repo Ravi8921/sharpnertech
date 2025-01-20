@@ -11,8 +11,8 @@ const User = require('./models/registerModel');
 
 const app = express();
 
-User.hasMany(Expense);
-Expense.belongsTo(User);
+// User.hasMany(Expense);
+// Expense.belongsTo(User);
 // Middleware
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json()); // Parse JSON data in the request body

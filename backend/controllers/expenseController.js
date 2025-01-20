@@ -15,6 +15,7 @@ const addExpense = async (req, res) => {
             amount,
             description,
             category,
+            userId:req.user.id
         });
 
         // Respond with the newly created expense
@@ -49,10 +50,17 @@ const deleteExpense = async (req, res) => {
 // Get all expenses
 const getExpenses = async (req, res) => {
     try {
-        const expenses = await Expense.findAll();
+        // Assuming the logged-in user's ID is available as req.user.id
+        const userId = req.user.id;
 
+        // Fetch expenses for the logged-in user
+        const expenses = await Expense.findAll({
+            where: { userId }, // Filter by userId
+        });
+
+        // Check if no expenses are found
         if (!expenses || expenses.length === 0) {
-            return res.status(404).json({ message: 'No expenses found.' });
+            return res.status(404).json({ message: 'No expenses found for the logged-in user.' });
         }
 
         return res.status(200).json({ expenses });
@@ -61,5 +69,6 @@ const getExpenses = async (req, res) => {
         return res.status(500).json({ message: 'Error fetching expenses.' });
     }
 };
+
 
 module.exports = { addExpense, deleteExpense, getExpenses };

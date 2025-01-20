@@ -30,6 +30,6 @@ User.init(
     timestamps: true, // Automatically adds createdAt and updatedAt fields
   }
 );
-// User.hasMany(Expense, { foreignKey: 'userId', onDelete: 'CASCADE' });
-// Expense.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Expense, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Expense.belongsTo(User, { foreignKey: 'userId' });
 module.exports = User;
