@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daily Expenses</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f9;
+      }
+      .expense-form {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+      }
+      .expense-form h2 {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .form-group button {
+        padding: 10px;
+        background-color: #5cb85c;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .form-group button:hover {
+        background-color: #4cae4c;
+      }
+      .expense-list {
+        margin-top: 20px;
+      }
+      .expense-list table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .expense-list th,
+      .expense-list td {
+        padding: 8px;
+        border: 1px solid #ccc;
+        text-align: left;
+      }
+      .error-message {
+        color: red;
+        margin-top: 10px;
+      }
+      #buyPremiumBtn {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #buyPremiumBtn:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="expense-form">
+      <h2>Daily Expense Tracker</h2>
+      <form id="expenseForm">
+        <div class="form-group">
+          <label for="amount">Amount Spent:</label>
+          <input type="number" id="amount" name="amount" required />
+        </div>
+        <div class="form-group">
+          <label for="description">Description:</label>
+          <input type="text" id="description" name="description" required />
+        </div>
+        <div class="form-group">
+          <label for="category">Category:</label>
+          <select id="category" name="category" required>
+            <option value="Food">Food</option>
+            <option value="Petrol">Petrol</option>
+            <option value="Salary">Salary</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button type="submit">Add Expense</button>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+      <button id="buyPremiumBtn">Buy Premium</button>
+      <div class="expense-list" id="expenseList">
+        <h3>Previous Expenses</h3>
+        <table id="expenseTable">
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Expenses will be added here dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      const expenseForm = document.getElementById("expenseForm");
+      const expenseTable = document
+        .getElementById("expenseTable")
+        .getElementsByTagName("tbody")[0];
+      const errorMessage = document.getElementById("errorMessage");
+
+      // Retrieve token from localStorage
+      function getToken() {
+        return localStorage.getItem("authToken");
+      }
+
+      // Add token to axios requests
+      axios.defaults.headers.common["Authorization"] = `Bearer ${getToken()}`;
+
+      // Fetch expenses when the page loads
+      window.onload = async function () {
+        try {
+          const response = await axios.post(
+            "http://localhost:3000/expense/getExpense"
+          );
+          if (response.status === 200) {
+            response.data.expenses.forEach((expense) => {
+              addExpenseToTable(expense);
+            });
+          } else {
+            console.log("Failed to fetch expenses.");
+          }
+        } catch (error) {
+          console.error("Error fetching expenses:", error);
+        }
+      };
+
+      // Handle expense form submission
+      expenseForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const amount = document.getElementById("amount").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const category = document.getElementById("category").value.trim();
+
+        // Clear previous error messages
+        errorMessage.textContent = "";
+
+        // Validate inputs
+        if (!amount || !description || !category) {
+          errorMessage.textContent = "All fields are required.";
+          return;
+        }
+
+        try {
+          const response = await axios.post("http://localhost:3000/expense/addexpense", {
+            amount,
+            description,
+            category,
+          });
+
+          if (response.status === 201) {
+            // Add the expense to the table
+            addExpenseToTable(response.data.expense);
+
+            // Reset the form fields after submission
+            expenseForm.reset();
+          } else {
+            errorMessage.textContent = response.data.message || "Error adding expense.";
+          }
+        } catch (error) {
+          console.error("Error submitting expense:", error);
+
+          // Handle Axios or network errors
+          if (error.response) {
+            errorMessage.textContent = error.response.data.message || "Error adding expense.";
+          } else if (error.request) {
+            errorMessage.textContent = "No response from the server. Please try again.";
+          } else {
+            errorMessage.textContent = "Failed to connect to the server.";
+          }
+        }
+      });
+
+      // Add expense to the table dynamically
+      function addExpenseToTable(expense) {
+        const row = expenseTable.insertRow();
+        row.setAttribute("data-id", expense.id); // Assign unique ID to the row
+        row.innerHTML = `
+          <td>${expense.amount}</td>
+          <td>${expense.description}</td>
+          <td>${expense.category}</td>
+          <td><button onclick="deleteExpense(${expense.id})">Delete</button></td>
+        `;
+      }
+
+      // Confirm deletion before proceeding
+      async function deleteExpense(expenseId) {
+        if (confirm("Are you sure you want to delete this expense?")) {
+          try {
+            const response = await axios.delete(
+              `http://localhost:3000/expense/deleteExpense/${expenseId}`
+            );
+
+            if (response.status === 200) {
+              const row = document.querySelector(`tr[data-id="${expenseId}"]`);
+              if (row) row.remove();
+            } else {
+              console.error("Error deleting expense.");
+            }
+          } catch (error) {
+            if (error.response) {
+              if (error.response.status === 401) {
+                // Token is invalid or expired
+                alert("Your session has expired. Please log in again.");
+                localStorage.removeItem("authToken");
+                window.location.href = "/login";  // Redirect to login page
+              } else {
+                console.error("Error:", error.response.data);
+              }
+            } else {
+              console.error("Network error or no response from server.");
+            }
+          }
+        }
+      }
+
+      document.getElementById('buyPremiumBtn').onclick = async function (e) {
+        try {
+          // Retrieve token from localStorage
+          const token = localStorage.getItem('authToken'); // Corrected token name
+
+          // Make a request to your backend to get Razorpay order details
+          const response = await axios.get('http://localhost:3000/expense/purchasepremium', {
+            headers: {
+              Authorization: `Bearer ${token}` // Ensure the token is passed correctly
+            }
+          });
+
+          const options = {
+            key: response.data.key_id, // Enter the Key ID generated from the Dashboard
+            order_id: response.data.order.id, // For one-time payment
+            handler: async function (paymentResponse) {
+              try {
+                // Make a request to update the transaction status
+                await axios.post('http://localhost:3000/expense/updateTransactionStatus', {
+                  order_id: options.order_id,
+                  payment_id: paymentResponse.razorpay_payment_id
+                }, {
+                  headers: {
+                    Authorization: `Bearer ${token}` // Add token in headers for auth
+                  }
+                });
+
+                // Show success message after payment
+                alert('You are a Premium User Now');
+              } catch (error) {
+                console.error('Error during transaction status update:', error);
+              }
+            },
+            prefill: {
+              // Add any prefill options here if necessary (e.g., user info)
+            },
+            theme: {
+              color: '#F37254'
+            }
+          };
+
+          // Initialize Razorpay payment
+          const razorpay = new Razorpay(options);
+          razorpay.open();
+        } catch (error) {
+          console.error("Error initiating premium purchase:", error);
+        }
+      };
+    </script>
+  </body>
+</html>
